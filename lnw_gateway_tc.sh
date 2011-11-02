@@ -41,9 +41,9 @@ case "$1" in
         
         # INTERACTIVE CLASS: for low latency, high priority packets such as VoIP and DNS
         # it has little bandwidth assigned to it, but pass before everything else
-        echo "#---interactive - id 100 - rate $(( $UPLINK / 10 )) kbit ceil $(( $UPLINK )) kbit"
+        echo "#---interactive - id 100 - rate $(( $UPLINK / 10 )) kbit ceil $(( $UPLINK / 10 * 8 )) kbit"
         $TC class add dev $NETCARD parent 1:1 classid 1:100 htb \
-            rate $(( $UPLINK / 10 ))kbit ceil $(( $UPLINK / 3 ))kbit \
+            rate $(( $UPLINK / 10 ))kbit ceil $(( $UPLINK / 10 * 8 ))kbit \
             burst 5k prio 1
 
         # this class transmits uses a pfifo before exiting
@@ -66,8 +66,8 @@ case "$1" in
         $TC class add dev $NETCARD parent 1:1 classid 1:200 htb \
             rate $(( $UPLINK / 5 ))kbit ceil $(( $UPLINK / 10 ))kbit burst 15k prio 2
 
-        echo "#--- ~ sub tcp acks: pfifo"
-        $TC qdisc add dev $NETCARD parent 1:200 handle 1200: pfifo limit 10
+        echo "#--- ~ sub tcp acks: sfq"
+        $TC qdisc add dev $NETCARD parent 1:200 handle 1200: sfq perturb 10 limit 32
 
         echo "#--- ~ filtre tcp acks"
         $TC filter add dev $NETCARD parent 1:0 protocol ip prio 2 handle 200 fw flowid 1:200

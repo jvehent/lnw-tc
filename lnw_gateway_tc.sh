@@ -79,7 +79,7 @@ case "$1" in
         # however, an SSH connection cannot fill up the connection to more than 70%
         echo "#---ssh - id 300 - rate $(( $UPLINK / 10 )) kbit ceil $(( $UPLINK / 10 * 7 )) kbit"
         $TC class add dev $NETCARD parent 1:1 classid 1:300 htb \
-            rate $(( $UPLINK / 10 ))kbit ceil $(( $UPLINK / 8 ))kbit burst 15k prio 3
+            rate $(( $UPLINK / 10 ))kbit ceil $(( $UPLINK / 10 * 7 ))kbit burst 15k prio 3
 
         # SFQ will mix the packets if there are several SSH connections in parallel
         # and ensure that none has the priority
@@ -90,7 +90,7 @@ case "$1" in
         $TC filter add dev $NETCARD parent 1:0 protocol ip prio 3 handle 300 fw flowid 1:300
 
         echo "#--- ~ netfilter rule - SSH at 300"
-        $IPT -t mangle -A POSTROUTING -o $NETCARD -p tcp --tcp-flags SYN,ACK SYN,ACK \
+        $IPT -t mangle -A POSTROUTING -o $NETCARD -p tcp --tcp-flags SYN SYN \
             --dport 22 -j CONNMARK --set-mark 300
 
 
